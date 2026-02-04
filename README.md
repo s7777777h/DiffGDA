@@ -1,5 +1,5 @@
 # Learning Structure-Semantic  Evolution Trajectories for Graph Domain Adaptation
-This is the source code of "Learning Structure-Semantic  Evolution Trajectories for Graph Domain Adaptation"
+This repo is for source code of 2026 ICLR paper "Learning Structure-Semantic  Evolution Trajectories for Graph Domain Adaptation".
 
 # Abstract
 
@@ -8,7 +8,12 @@ Existing methods for UGDA can be broadly categorized into model-oriented and dat
 However, this discretization often fails in real-world scenarios, where graph structures evolve continuously and nonlinearly, making it difficult for fixed-step alignment to approximate the actual transformation process.
 To address these limitations, we propose DCT, a diffusion-based UGDA method that models cross-graph adaptation as a continuous-time generative process. We formulate the evolution from source to target graphs using stochastic differential equations (SDEs), enabling the joint modeling of structural and semantic transitions. To guide this evolution, we introduce a domain-aware guidance network that estimates the density ratio between source and target graphs in a shared structure–semantic space.  Extensive experiments across 14 transfer tasks demonstrate that DCT consistently outperforms state-of-the-art baselines.
 
+# Model Architecture
+
+![image-20260204220201360](img/model.png)
+
 # Requirements
+
 This code requires the following:
 * torch==2.4.1
 * torch-scatter==2.1.2
