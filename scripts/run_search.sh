@@ -326,5 +326,101 @@ for gpu in "${GPUS[@]}"; do
   fi
 done
 
+python - "${merged}" "${OUT_DIR}/summary_best.csv" "${OUT_DIR}/summary_best.json" <<'PY'
+import csv
+import json
+import sys
+
+results_path, summary_csv_path, summary_json_path = sys.argv[1:]
+
+
+def to_float(value):
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+rows = []
+try:
+    with open(results_path, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+except FileNotFoundError:
+    rows = []
+
+best_by_scenario = {}
+for row in rows:
+    if str(row.get("return_code", "")) != "0":
+        continue
+
+    best_micro = to_float(row.get("best_micro_f1"))
+    best_macro = to_float(row.get("best_macro_f1"))
+    final_micro = to_float(row.get("micro_f1"))
+    final_macro = to_float(row.get("macro_f1"))
+
+    score_micro = best_micro if best_micro is not None else final_micro
+    score_macro = best_macro if best_macro is not None else final_macro
+    if score_micro is None or score_macro is None:
+        continue
+
+    score = score_micro + score_macro
+    scenario = row.get("scenario", "")
+    candidate = {
+        "scenario": scenario,
+        "selection_score": score,
+        "selected_micro_f1": score_micro,
+        "selected_macro_f1": score_macro,
+        "best_micro_f1": best_micro,
+        "best_macro_f1": best_macro,
+        "best_diff_epoch": row.get("best_diff_epoch", ""),
+        "final_micro_f1": final_micro,
+        "final_macro_f1": final_macro,
+        "lr": to_float(row.get("lr")),
+        "alpha": to_float(row.get("alpha")),
+        "eta": to_float(row.get("eta")),
+        "diffusion_steps": int(float(row["diffusion_steps"])) if row.get("diffusion_steps") else None,
+        "trial": int(float(row["trial"])) if row.get("trial") else None,
+        "gpu": row.get("gpu", ""),
+        "log_path": row.get("log_path", ""),
+    }
+    current = best_by_scenario.get(scenario)
+    if current is None or candidate["selection_score"] > current["selection_score"]:
+        best_by_scenario[scenario] = candidate
+
+summary = [best_by_scenario[key] for key in sorted(best_by_scenario)]
+fieldnames = [
+    "scenario",
+    "selection_score",
+    "selected_micro_f1",
+    "selected_macro_f1",
+    "best_micro_f1",
+    "best_macro_f1",
+    "best_diff_epoch",
+    "final_micro_f1",
+    "final_macro_f1",
+    "lr",
+    "alpha",
+    "eta",
+    "diffusion_steps",
+    "trial",
+    "gpu",
+    "log_path",
+]
+
+with open(summary_csv_path, "w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(summary)
+
+with open(summary_json_path, "w", encoding="utf-8") as f:
+    json.dump(summary, f, indent=2, ensure_ascii=False)
+
+print(f"[summary] wrote {summary_csv_path}")
+print(f"[summary] wrote {summary_json_path}")
+PY
+
 echo "[done] all workers finished"
 echo "[done] merged results: ${merged}"
+echo "[done] best summary: ${OUT_DIR}/summary_best.csv"

@@ -100,6 +100,10 @@ Use `RESUME_KEY` to separate incompatible search versions:
 RESUME_KEY=airport_mmd_v1 DOMAIN=airport bash scripts/run_search.sh
 ```
 
+After the search finishes, `scripts/run_search.sh` writes `results_all.csv` and
+`summary_best.csv` under the output directory. The summary selects the best
+hyperparameter setting for each scenario by maximizing `Micro-F1 + Macro-F1`.
+
 # Evaluate
 
 The `eval_micro_f1` method from the `pygda` library can easily be used to evaluate the performance of the model.
